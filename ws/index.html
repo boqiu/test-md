@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>WebSocket API - Conflux DEX</title>
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+        <script src="../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../js/bootstrap-3.0.3.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+
+                <!-- Collapsed navigation -->
+                <div class="navbar-header">
+                    <!-- Expander button -->
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="..">Conflux DEX</a>
+                </div>
+
+                <!-- Expanded navigation -->
+                <div class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li >
+                                <a href="..">Home</a>
+                            </li>
+                            <li >
+                                <a href="../rest/">REST API</a>
+                            </li>
+                            <li class="active">
+                                <a href="./">WebSocket API</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li >
+                                <a rel="next" href="../rest/">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="disabled">
+                                <a rel="prev" >
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+        <li class="main active"><a href="#conflux-dex-websocket-api">Conflux-DEX Websocket API</a></li>
+            <li><a href="#general">General</a></li>
+            <li><a href="#market-data">Market Data</a></li>
+            <li><a href="#asset-and-order">Asset and Order</a></li>
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="conflux-dex-websocket-api">Conflux-DEX Websocket API</h1>
+<h2 id="general">General</h2>
+<h3 id="websocket-url">Websocket URL</h3>
+<p>ws://${conflux_dex_url}/ws</p>
+<h3 id="heartbeat-and-connection">Heartbeat and Connection</h3>
+<p>Websocket server will send <code>PING</code> heartbeat message periodically (20 seconds) with an integer number. When client receives the heartbeat message, it should response with a matching <code>PONG</code> message which has the same integer number.</p>
+<p>Websocket server will disconnect clients if there is no communication message (inclues <code>PING</code> message) in 30 seconds.</p>
+<p>On the other hand, Websocket server will periodically (20 seconds) disconnect clients if no topic subscribed.</p>
+<h3 id="subscribe-to-topic">Subscribe to Topic</h3>
+<p>To subscribe a topic, please send below message to Websocket server:</p>
+<pre><code class="json">{
+    &quot;topic&quot;: &quot;topic name&quot;,
+    &quot;sub&quot;: true,
+    &quot;arguments&quot;: {}
+}
+</code></pre>
+
+<p>The <code>arguments</code> is used to specify additional parameters to subscribe a topic, e.g. specify user address to subscribe <strong>Asset</strong> or <strong>Order</strong> related topics.</p>
+<h3 id="unsubscribe">Unsubscribe</h3>
+<p>To unsubscribe, please send below message to Websocket server:</p>
+<pre><code class="json">{
+    &quot;topic&quot;: &quot;topic name&quot;,
+    &quot;sub&quot;: false
+}
+</code></pre>
+
+<h3 id="topic-response">Topic Response</h3>
+<p>Websocket server push messages of different topics in the same format as below:</p>
+<pre><code class="json">{
+    &quot;topic&quot;: &quot;topic name&quot;,
+    &quot;timestamp&quot;: 1582609926336,
+    &quot;data&quot;: {}
+}
+</code></pre>
+
+<p>As for the <code>data</code> value, please refer to the <strong>Update Content</strong> that defined for each topic.</p>
+<h2 id="market-data">Market Data</h2>
+<h3 id="best-bidoffer">Best Bid/Offer</h3>
+<h4 id="topic">Topic</h4>
+<p><code>market.$product.bbo</code></p>
+<h4 id="update-content">Update Content</h4>
+<pre><code class="java">public class BestBidOffer {
+    /**
+     * Product name.
+     */
+    private String product;
+    /**
+     * Quote timestamp.
+     */
+    private Instant quoteTime;
+    /**
+     * Best bid price.
+     */
+    private BigDecimal bid;
+    /**
+     * Best bid amount.
+     */
+    private BigDecimal bidAmount;
+    /**
+     * Best bid order count.
+     */
+    private int bidCount;
+    /**
+     * Best ask price.
+     */
+    private BigDecimal ask;
+    /**
+     * Best ask amount.
+     */
+    private BigDecimal askAmount;
+    /**
+     * Best ask order count.
+     */
+    private int askCount;
+}
+</code></pre>
+
+<h3 id="market-depth">Market Depth</h3>
+<h4 id="topic_1">Topic</h4>
+<p><code>market.$product.depth.$step</code></p>
+<p><code>$step</code>: market depth aggregation level, including "step0", "step1", "step2", "step3", "step4" and "step5". For "step0", market depth data supports up to 150 levels. For others, market depth data supports up to 20 levels.</p>
+<h4 id="update-content_1">Update Content</h4>
+<pre><code class="json">{
+    &quot;Buy&quot;: [{}],
+    &quot;Sell&quot;: [{}]
+}
+</code></pre>
+
+<pre><code class="java">public class DepthPriceLevel {
+    /**
+     * Order price.
+     */
+    private BigDecimal price;
+    /**
+     * Total amount in all orders.
+     */
+    private BigDecimal amount;
+    /**
+     * Total number of all orders.
+     */
+    private int count;
+}
+</code></pre>
+
+<h3 id="market-details-in-last-24-hours">Market Details in Last 24 Hours</h3>
+<h4 id="topic_2">Topic</h4>
+<p><code>market.$product.detail</code></p>
+<h4 id="update-content_2">Update Content</h4>
+<pre><code class="java">public class Tick implements Cloneable {
+    /**
+     * Tick id. (auto-generated)
+     */
+    private long id;
+    /**
+     * Referenced product id.
+     */
+    private int productId;
+    /**
+     * Tick granularity in minutes.
+     */
+    private int granularity;
+    /**
+     * Tick open value.
+     */
+    private BigDecimal open;
+    /**
+     * Tick high value.
+     */
+    private BigDecimal high;
+    /**
+     * Tick low value.
+     */
+    private BigDecimal low;
+    /**
+     * Tick close value.
+     */
+    private BigDecimal close;
+    /**
+     * Total volume of base currency.
+     */
+    private BigDecimal baseCurrencyVolume;
+    /**
+     * Total volume of quote currency.
+     */
+    private BigDecimal quoteCurrencyVolume;
+    /**
+     * Total number of trades.
+     */
+    private int count;
+    /**
+     * Tick creation timestamp.
+     */
+    private Timestamp createTime;
+    /**
+     * Last update timestamp.
+     */
+    private Timestamp updateTime;
+}
+</code></pre>
+
+<h3 id="market-tick">Market Tick</h3>
+<h4 id="topic_3">Topic</h4>
+<p><code>market.$product.tick.$granularity</code></p>
+<p><code>$granularity</code>: tick granularity, including 1min, 5min, 15min, 30min, 60min, 1day, 1week and 1month.</p>
+<h4 id="update-content_3">Update Content</h4>
+<pre><code class="java">public class Tick implements Cloneable {
+    /**
+     * Tick id. (auto-generated)
+     */
+    private long id;
+    /**
+     * Referenced product id.
+     */
+    private int productId;
+    /**
+     * Tick granularity in minutes.
+     */
+    private int granularity;
+    /**
+     * Tick open value.
+     */
+    private BigDecimal open;
+    /**
+     * Tick high value.
+     */
+    private BigDecimal high;
+    /**
+     * Tick low value.
+     */
+    private BigDecimal low;
+    /**
+     * Tick close value.
+     */
+    private BigDecimal close;
+    /**
+     * Total volume of base currency.
+     */
+    private BigDecimal baseCurrencyVolume;
+    /**
+     * Total volume of quote currency.
+     */
+    private BigDecimal quoteCurrencyVolume;
+    /**
+     * Total number of trades.
+     */
+    private int count;
+    /**
+     * Tick creation timestamp.
+     */
+    private Timestamp createTime;
+    /**
+     * Last update timestamp.
+     */
+    private Timestamp updateTime;
+}
+</code></pre>
+
+<h3 id="trade-detail">Trade Detail</h3>
+<h4 id="topic_4">Topic</h4>
+<p><code>market.$product.trade.detail</code></p>
+<h4 id="update-content_4">Update Content</h4>
+<pre><code class="java">public class Trade {
+    /**
+     * Trade id. (auto-generated)
+     */
+    private long id;
+    /**
+     * Referenced product id.
+     */
+    private int productId;
+    /**
+     * Referenced taker order id.
+     */
+    private long takerOrderId;
+    /**
+     * Referenced maker order id.
+     */
+    private long makerOrderId;
+    /**
+     * Trade price from maker order.
+     */
+    private BigDecimal price;
+    /**
+     * Trade amount.
+     */
+    private BigDecimal amount;
+    /**
+     * Taker order side: &quot;Buy&quot;, &quot;Sell&quot;.
+     */
+    private OrderSide side;
+    /**
+     * Trade status: &quot;OffChainSettled&quot;, &quot;OnChainSettled&quot;, &quot;OnChainConfirmed&quot;.
+     */
+    private SettlementStatus status;
+    /**
+     * Transaction hash of matching orders on blockchain.
+     */
+    private String txHash;
+    /**
+     * Trade timestamp.
+     */
+    private Timestamp createTime;
+}
+</code></pre>
+
+<h2 id="asset-and-order">Asset and Order</h2>
+<h3 id="account-updates">Account Updates</h3>
+<h4 id="topic_5">Topic</h4>
+<p><code>accounts</code></p>
+<h4 id="arguments">Arguments</h4>
+<p><code>address</code>: user address.<br />
+<code>model</code>: trigger mode in integer type.
+- 0: Only update when account balance changed;
+- 1: Update when either account balance changed or available balance changed.</p>
+<h4 id="update-content_5">Update Content</h4>
+<pre><code class="java">public class BalanceChange {
+    /**
+     * Balance change type, including &quot;OrderPlace&quot;, &quot;OrderMatch&quot;, &quot;OrderCancel&quot;,
+     * &quot;Deposit&quot; and &quot;Withdraw&quot;.
+     */
+    private BalanceChangeType type;
+    /**
+     * The account id of the changed balance.
+     */
+    private long accountId;
+    /**
+     * The currency name of the changed balance.
+     */
+    private String currency;
+    /**
+     * Account balance (only exists when account balance changed).
+     */
+    private BigDecimal balance;
+    /**
+     * Available balance (only exists when available balance changed).
+     */
+    private BigDecimal available;
+    /**
+     * Change time, unix timestamp in milliseconds.
+     */
+    private long changeTime;
+}
+</code></pre>
+
+<h3 id="order-updates">Order Updates</h3>
+<h4 id="topic_6">Topic</h4>
+<p><code>order.$product</code></p>
+<p><code>$product</code>: product name or <strong>*</strong> for all products.</p>
+<h4 id="arguments_1">Arguments</h4>
+<p><code>address</code>: user address.</p>
+<h4 id="update-content_6">Update Content</h4>
+<pre><code class="java">public class OrderChange {
+    /**
+     * Changed order ID.
+     */
+    private long id;
+    /**
+     * Optional client defined order identity, which is unique for a user.
+     */
+    private String clientOrderId;
+    /**
+     * Product ID of the changed order.
+     */
+    private int productId;
+    /**
+     * Order type: &quot;Limit&quot;, &quot;Market&quot;.
+     */
+    private OrderType type;
+    /**
+     * Order side: &quot;Buy&quot;, &quot;Sell&quot;.
+     */
+    private OrderSide side;
+    /**
+     * Order status: &quot;New&quot;, &quot;Open&quot;, &quot;Cancelling&quot;, &quot;Cancelled&quot;, &quot;Filled&quot;.
+     */
+    private OrderStatus status;
+    /**
+     * Order price for &quot;Limit&quot; order type only.
+     */
+    private BigDecimal price;
+    /**
+     * Order amount for &quot;Limit&quot; order type or &quot;Market-Sell&quot; order.
+     * For &quot;Market-Buy&quot; order, it is the total order value.
+     */
+    private BigDecimal amount;
+    /**
+     * For order matched event, it indicates whether it is a taker order.
+     * For order type changed event, it is true by default.
+     */
+    private boolean taker;
+    /**
+     * Trade price (only exists for order matched event).
+     */
+    private BigDecimal tradePrice;
+    /**
+     * Trade amount (only exists for order matched event).
+     */
+    private BigDecimal tradeAmount;
+    /**
+     * Filled amount of base currency.
+     */
+    private BigDecimal filledAmount;
+    /**
+     * Filled funds of quote currency.
+     */
+    private BigDecimal filledFunds;
+}
+</code></pre>
+
+<h3 id="trade-details">Trade Details</h3>
+<h4 id="topic_7">Topic</h4>
+<p><code>trade.$product</code></p>
+<p><code>$product</code>: product name or <strong>*</strong> for all products.</p>
+<h4 id="arguments_2">Arguments</h4>
+<p><code>address</code>: user address.</p>
+<h4 id="update-content_7">Update Content</h4>
+<pre><code class="java">public class UserTrade {
+    /**
+     * Trade ID.
+     */
+    private long id;
+    /**
+     * Product ID.
+     */
+    private int productId;
+    /**
+     * Order ID.
+     */
+    private long orderId;
+    /**
+     * Order type: &quot;Limit&quot;, &quot;Market&quot;.
+     */
+    private OrderType orderType;
+    /**
+     * Order side: &quot;Buy&quot;, &quot;Sell&quot;.
+     */
+    private OrderSide orderSide;
+    /**
+     * Trade price from maker order.
+     */
+    private BigDecimal tradePrice;
+    /**
+     * Trade amount.
+     */
+    private BigDecimal tradeAmount;
+    /**
+     * Whether the trade is from taker order.
+     */
+    private boolean taker;
+    /**
+     * Trade time, unix timestamp in milliseconds.
+     */
+    private long tradeTime;
+}
+</code></pre></div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>Copyright © 2020 Conflux. All Rights Reserved.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js" defer></script>
+        <script src="../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form role="form">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="Keyboard Shortcuts Modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Keyboard Shortcuts</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
