@@ -1,0 +1,7 @@
+site_name: Conflux DEX
+nav:
+    - Home: index.md
+    - REST API: rest.md
+    - WebSocket API: ws.md
+# theme: readthedocs
+copyright: Copyright © 2020 Conflux. All Rights Reserved.
